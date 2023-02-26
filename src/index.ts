@@ -1,3 +1,4 @@
+import 'source-map-support/register';
 import * as core from '@actions/core';
 import { parseInputs } from './inputParser';
 import { getTestReports } from './junitParser';

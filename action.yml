@@ -45,4 +45,4 @@ inputs:
 
 runs:
     using: 'node18'
-    main: 'dist/index.js'
+    main: 'lib/index.js'
