@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "target": "ES2019",
+        "module": "NodeNext",
+        "moduleResolution": "node",
+        "outDir": "./lib",
+        "rootDir": ".",
+        "baseUrl": ".",
+        "strict": true,
+        "noImplicitAny": true,
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+    },
+    "exclude": ["node_modules", "**/*.test.ts"]
+}
