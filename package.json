@@ -14,6 +14,20 @@
         "lint": "eslint src/**/*.ts",
         "all": "yarn type-check && yarn build && yarn format && yarn lint"
     },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/atlowChemi/testim-junit-reporter"
+    },
+    "bugs": {
+        "url": "https://github.com/atlowChemi/testim-junit-reporter/issues"
+    },
+    "keywords": [
+        "GitHub",
+        "Actions",
+        "Junit",
+        "test",
+        "Testim.io"
+    ],
     "dependencies": {
         "@actions/core": "^1.10.0",
         "@actions/github": "^5.1.1",
