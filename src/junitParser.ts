@@ -104,10 +104,10 @@ async function parseSuite(report: JUnitReport, fileName: string, projectTokenDic
             testStatus,
             isTestimTest,
             annotation_level,
-            title: escapeEmoji(name),
+            title: escapeEmoji(isTestimTest ? name : `${classname} - ${name}`),
             message: isTestimTest ? (failure ? parseTestimFailureMessage(failure.message) : systemOut) : failure?.toString() || '',
             raw_details: `${escapeEmoji(classname)} - ${name}:\n(${failure?.message})`,
-            path: systemOut,
+            path: systemOut || 'unknown',
             end_line: 1,
             start_line: 1,
         });

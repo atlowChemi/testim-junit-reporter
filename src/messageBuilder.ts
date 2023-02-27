@@ -123,7 +123,7 @@ export async function attachSummary(accumulatedResult: TestResult, testResults: 
                 `${testResult.checkName}`,
                 `<a href="${annotation.path}">${annotation.title}</a>`,
                 `${annotation.annotation_level === 'notice' ? '✅ pass' : `❌ ${annotation.annotation_level}`}`,
-                annotation.isTestimTest ? `${color} ${annotation.testStatus} ${color}` : '-',
+                annotation.isTestimTest ? `${color} ${annotation.testStatus}` : '-',
             ]);
         }
     }
