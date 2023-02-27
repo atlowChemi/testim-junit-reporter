@@ -100,7 +100,7 @@ async function parseSuite({ testsuites: { testsuite } = {} }: Partial<JUnitRepor
 
 async function parseTestReports(checkName: string, summary: string, reportPathsGlob: string) {
     core.debug(`Process test report for: ${reportPathsGlob} (${checkName})`);
-    const res: TestResult = { annotations: [], checkName, fileName: '', summary, totalCount: 0, skipped: 0, passed: 0, failed: 0, failedEvaluating: 0 };
+    const testResults: TestResult[] = [];
 
     const globber = await glob.create(reportPathsGlob);
     for await (const file of globber.globGenerator()) {
@@ -110,20 +110,22 @@ async function parseTestReports(checkName: string, summary: string, reportPathsG
         if (totalCount === 0) {
             continue;
         }
-        if (name) {
-            res.checkName = name;
-        }
-        res.fileName = fileName;
-        res.totalCount += totalCount;
-        res.skipped += skipped;
-        res.failedEvaluating += failedEvaluating;
-        res.annotations.push(...annotations);
+        const failed = annotations.filter(an => an.annotation_level === 'failure').length;
+        const passed = totalCount - failed - skipped;
+        testResults.push({
+            summary,
+            checkName: name || checkName,
+            fileName,
+            totalCount,
+            skipped,
+            failedEvaluating,
+            annotations,
+            failed,
+            passed,
+        });
     }
 
-    res.failed = res.annotations.filter(an => an.annotation_level === 'failure').length;
-    res.passed = res.totalCount - res.failed - res.skipped;
-
-    return res;
+    return testResults;
 }
 
 class NoTestsFoundError extends Error {}
@@ -132,7 +134,18 @@ export async function getTestReports(inputs: Readonly<ReturnType<typeof parseInp
     core.startGroup(`📦 Process test results`);
     const reportsCount = inputs.reportPaths.length;
 
-    const testResults: TestResult[] = [];
+    core.info(`Retrieved ${reportsCount} report globs/files to process.`);
+
+    const allResults = await Promise.all(
+        inputs.reportPaths.map(async (_, i) =>
+            parseTestReports(
+                retrieve('checkName', inputs.checkName, i, reportsCount),
+                retrieve('summary', inputs.summary, i, reportsCount),
+                retrieve('reportPaths', inputs.reportPaths, i, reportsCount),
+            ),
+        ),
+    );
+    const testResults = allResults.flat();
     const accumulateResult: TestResult = {
         checkName: '',
         fileName: '',
@@ -144,21 +157,12 @@ export async function getTestReports(inputs: Readonly<ReturnType<typeof parseInp
         failedEvaluating: 0,
         annotations: [],
     };
-
-    core.info(`Retrieved ${reportsCount} report globs/files to process.`);
-
-    for (let i = 0; i < reportsCount; i++) {
-        const testResult = await parseTestReports(
-            retrieve('checkName', inputs.checkName, i, reportsCount),
-            retrieve('summary', inputs.summary, i, reportsCount),
-            retrieve('reportPaths', inputs.reportPaths, i, reportsCount),
-        );
-
-        accumulateResult.totalCount += testResult.totalCount;
-        accumulateResult.skipped += testResult.skipped;
-        accumulateResult.failed += testResult.failed;
-        accumulateResult.passed += testResult.passed;
-        testResults.push(testResult);
+    for (const tr of testResults) {
+        accumulateResult.totalCount += tr.totalCount;
+        accumulateResult.skipped += tr.skipped;
+        accumulateResult.failed += tr.failed;
+        accumulateResult.passed += tr.passed;
+        accumulateResult.failedEvaluating += tr.failedEvaluating;
     }
 
     core.setOutput('total', accumulateResult.totalCount);
