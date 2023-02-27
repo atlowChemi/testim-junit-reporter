@@ -94,7 +94,7 @@ export async function attachSummary(accumulatedResult: TestResult, testResults: 
 
     const detailsTable: SummaryTableRow[] = [
         [
-            { data: '', header: true },
+            { data: 'Suite', header: true },
             { data: 'Test', header: true },
             { data: 'Result', header: true },
             { data: 'Test Status', header: true },
@@ -123,7 +123,7 @@ export async function attachSummary(accumulatedResult: TestResult, testResults: 
                 `${testResult.checkName}`,
                 `<a href="${annotation.path}">${annotation.title}</a>`,
                 `${annotation.annotation_level === 'notice' ? '✅ pass' : `❌ ${annotation.annotation_level}`}`,
-                `${color} ${annotation.testStatus} ${color}`,
+                annotation.isTestimTest ? `${color} ${annotation.testStatus} ${color}` : '-',
             ]);
         }
     }

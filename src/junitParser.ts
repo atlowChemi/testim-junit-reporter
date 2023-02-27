@@ -36,6 +36,7 @@ export interface Annotation {
     start_line: number;
     raw_details: string;
     testStatus: string;
+    isTestimTest: boolean;
 }
 
 export interface JUnitTestCase {
@@ -90,6 +91,7 @@ async function parseSuite(report: JUnitReport, fileName: string, projectTokenDic
             result.skipped++;
         }
 
+        const isTestimTest = systemOut?.startsWith('https://app.testim.io/#/project');
         const { testId } = systemOut?.match(/\/test\/(?<testId>.*)\?/)?.groups || {};
         const testStatus = (testId && testListInfo?.find(({ _id }) => _id === testId)?.testStatus) || 'draft';
 
@@ -100,9 +102,10 @@ async function parseSuite(report: JUnitReport, fileName: string, projectTokenDic
 
         result.annotations.push({
             testStatus,
+            isTestimTest,
             annotation_level,
             title: escapeEmoji(name),
-            message: failure ? parseTestimFailureMessage(failure.message) : systemOut,
+            message: isTestimTest ? (failure ? parseTestimFailureMessage(failure.message) : systemOut) : failure?.toString() || '',
             raw_details: `${escapeEmoji(classname)} - ${name}:\n(${failure?.message})`,
             path: systemOut,
             end_line: 1,
