@@ -30,6 +30,9 @@ export interface Annotation {
     message: string;
     resultLink: string;
     classname: string;
+    end_line: string;
+    path: string;
+    start_line: string;
 }
 
 interface JUnitTestCase {
@@ -86,6 +89,9 @@ async function parseSuite({ testsuites: { testsuite } = {} }: Partial<JUnitRepor
             message: escapeEmoji((failure?.message || name).trim()),
             classname: escapeEmoji(classname),
             resultLink: systemOut,
+            end_line: '',
+            path: '',
+            start_line: '',
         });
     }
     return result;
