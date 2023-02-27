@@ -42,6 +42,9 @@ inputs:
         description: 'Fail the build in case a test failure occurred.'
         required: false
         default: 'false'
+    project_api_key_map:
+        description: 'Dictionary of Testim API token and project.'
+        required: false
 
 runs:
     using: 'node16'

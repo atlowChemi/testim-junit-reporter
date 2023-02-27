@@ -19,6 +19,7 @@ export function parseInputs() {
         updateCheck: core.getInput('update_check') === 'true',
         requireTests: core.getInput('require_tests') === 'true',
         failOnFailure: core.getInput('fail_on_failure') === 'true',
+        projectTokenDictionary: core.getMultilineInput('project_api_key_map'),
     };
     core.debug(JSON.stringify(values, undefined, 4));
     core.endGroup();

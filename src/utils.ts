@@ -1,4 +1,6 @@
 import * as core from '@actions/core';
+import * as http from '@actions/http-client';
+import type { JUnitTestCase } from './junitParser';
 
 export function retrieve(name: string, items: string[], index: number, total: number): string {
     if (total > 1) {
@@ -49,4 +51,54 @@ export function parseTestimFailureMessage(textContent: string) {
     const link = `https://${textContent.substring(message.length).split('https://').at(1)}`;
 
     return `${message}\n${link}`;
+}
+
+function getTestimSuiteDetails(testCases: JUnitTestCase[]) {
+    const testimResult = testCases.find(({ ['system-out']: syso }) => syso?.includes('https://app.testim.io/#/project'));
+    const urlParts = testimResult?.['system-out'].match(/\/project\/(?<projectId>.*)\/branch\/(?<branch>.*)\/test/);
+    if (!urlParts?.groups) {
+        return {};
+    }
+    const { projectId, branch } = urlParts.groups;
+    return { projectId, branch };
+}
+
+function parseProjectTokenDictionary(projectTokenDictionaryStrs: string[]) {
+    core.warning(projectTokenDictionaryStrs.toString());
+    const entries = projectTokenDictionaryStrs.map(str => str.split(':') as [string, string]).filter(([key, value, ...rest]) => !rest.length || (key && value));
+    return Object.fromEntries(entries);
+}
+
+const httpClient = new http.HttpClient();
+const projectBranchTestStatusMap = new Map<string, Promise<{ _id: string; testStatus?: string }[]>>();
+
+export async function getTestStatusesFromPublicAPI(testCases: JUnitTestCase[], projectTokenDictionaryStrs: string[]) {
+    const { branch, projectId } = getTestimSuiteDetails(testCases);
+    const projectTokenDictionary = parseProjectTokenDictionary(projectTokenDictionaryStrs);
+
+    if (!branch || !projectId || !projectTokenDictionary[projectId]) {
+        return [];
+    }
+
+    const mapKey = `${projectId}_${branch}`;
+
+    if (projectBranchTestStatusMap.has(mapKey)) {
+        return await projectBranchTestStatusMap.get(mapKey);
+    }
+
+    const loadTestList = async () => {
+        const res = await httpClient.get(`https://api.testim.io/tests?branch=${branch}&includeTestStatus=true`, {
+            Authorization: `Bearer ${projectTokenDictionary[projectId]}`,
+            'Content-Type': 'application/json',
+        });
+        const { tests, error } = JSON.parse(await res.readBody()) as { error?: string; tests: { _id: string; testStatus?: string }[] };
+        if (error) {
+            throw new Error(error);
+        }
+        return tests;
+    };
+    const testListPerProjectAndBranch = loadTestList();
+
+    projectBranchTestStatusMap.set(mapKey, testListPerProjectAndBranch);
+    return await testListPerProjectAndBranch;
 }
