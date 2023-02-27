@@ -88,7 +88,7 @@ async function parseSuite({ testsuites: { testsuite } = {} }: Partial<JUnitRepor
         result.annotations.push({
             annotation_level: success ? 'notice' : 'failure',
             title: escapeEmoji(name),
-            message: parseTestimFailureMessage(failure?.message || ''),
+            message: failure ? parseTestimFailureMessage(failure.message) : systemOut,
             raw_details: `${escapeEmoji(classname)} - ${name}:\n(${failure?.message})`,
             path: systemOut,
             end_line: 1,

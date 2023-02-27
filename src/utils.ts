@@ -42,13 +42,11 @@ function findMatchingOption(message: string, ...strings: string[]) {
 }
 
 export function parseTestimFailureMessage(textContent: string) {
-    const urlLocation = findMatchingOption('More info at: https://', 'abortedhttps://', ': https://');
-    const msgSubstringLength = urlLocation.length - 8;
+    const https = 'https://';
+    const urlLocation = findMatchingOption(textContent, `More info at: ${https}`, `aborted${https}`, `: ${https}`);
+    const msgSubstringLength = urlLocation.length - https.length;
     const message = textContent.substring(0, urlLocation.index + msgSubstringLength);
-    const link = textContent
-        .substring(urlLocation.index + 2)
-        .split('https://')
-        .at(1);
+    const link = `https://${textContent.substring(message.length).split('https://').at(1)}`;
 
-    return `${message}\nhttps://${link}`;
+    return `${message}\n${link}`;
 }
