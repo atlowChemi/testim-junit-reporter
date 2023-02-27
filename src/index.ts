@@ -7,7 +7,7 @@ import { annotateTestResult, attachSummary } from './messageBuilder';
 export async function run(): Promise<void> {
     try {
         const inputs = parseInputs();
-        const { accumulateResult, testResults, conclusion, headSha } = await getTestReports(inputs);
+        const { accumulatedResult, testResults, conclusion, headSha } = await getTestReports(inputs);
 
         core.startGroup(`🚀 Publish results`);
         try {
@@ -24,7 +24,7 @@ export async function run(): Promise<void> {
         const supportsJobSummary = process.env['GITHUB_STEP_SUMMARY'];
         if (supportsJobSummary) {
             try {
-                await attachSummary(accumulateResult, testResults);
+                await attachSummary(accumulatedResult, testResults);
             } catch (error) {
                 core.error(`❌ Failed to set the summary using the provided token. (${error})`);
             }
@@ -33,7 +33,7 @@ export async function run(): Promise<void> {
         }
 
         if (inputs.failOnFailure && conclusion === 'failure') {
-            core.setFailed(`❌ Tests reported ${accumulateResult.failed} failures`);
+            core.setFailed(`❌ Tests reported ${accumulatedResult.failed} failures`);
         }
 
         core.endGroup();

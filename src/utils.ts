@@ -64,7 +64,6 @@ function getTestimSuiteDetails(testCases: JUnitTestCase[]) {
 }
 
 function parseProjectTokenDictionary(projectTokenDictionaryStrs: string[]) {
-    core.warning(projectTokenDictionaryStrs.toString());
     const entries = projectTokenDictionaryStrs.map(str => str.split(':').map(val => val.trim()) as [string, string]).filter(([key, value, ...rest]) => !rest.length || (key && value));
     return Object.fromEntries(entries);
 }

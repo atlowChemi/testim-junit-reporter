@@ -73,7 +73,7 @@ export async function annotateTestResult(testResult: TestResult, token: string, 
     }
 }
 
-export async function attachSummary(accumulateResult: TestResult, testResults: TestResult[]): Promise<void> {
+export async function attachSummary(accumulatedResult: TestResult, testResults: TestResult[]): Promise<void> {
     const table: SummaryTableRow[] = [
         [
             { data: 'Name', header: true },
@@ -90,8 +90,14 @@ export async function attachSummary(accumulateResult: TestResult, testResults: T
             { data: '', header: true },
             { data: 'Test', header: true },
             { data: 'Result', header: true },
+            { data: 'Test Status', header: true },
         ],
     ];
+
+    const hasAnnotations = accumulatedResult.annotations.some(annotation => annotation.annotation_level !== 'notice');
+    if (!hasAnnotations) {
+        detailsTable.push([`-`, `No test annotations available`, `-`, '-']);
+    }
 
     for (const testResult of testResults) {
         table.push([
@@ -103,29 +109,25 @@ export async function attachSummary(accumulateResult: TestResult, testResults: T
             `${testResult.failedEvaluating} failed evaluating`,
         ]);
 
-        const annotations = testResult.annotations.filter(annotation => annotation.annotation_level !== 'notice');
-
-        if (annotations.length === 0) {
-            detailsTable.push([`-`, `No test annotations available`, `-`]);
-        } else {
-            for (const annotation of annotations) {
-                detailsTable.push([
-                    `${testResult.checkName}`,
-                    `<a href="${annotation.path}">${annotation.title}</a>`,
-                    `${annotation.annotation_level === 'notice' ? '✅ pass' : `❌ ${annotation.annotation_level}`}`,
-                ]);
-            }
+        const annotations = hasAnnotations ? testResult.annotations.filter(annotation => annotation.annotation_level !== 'notice') : [];
+        for (const annotation of annotations) {
+            detailsTable.push([
+                `${testResult.checkName}`,
+                `<a href="${annotation.path}">${annotation.title}</a>`,
+                `${annotation.annotation_level === 'notice' ? '✅ pass' : `❌ ${annotation.annotation_level}`},`,
+                annotation.testStatus,
+            ]);
         }
     }
 
     if (testResults.length > 1) {
         table.push([
             'Total',
-            `${accumulateResult.totalCount} run`,
-            `${accumulateResult.passed} passed`,
-            `${accumulateResult.skipped} skipped`,
-            `${accumulateResult.failed} failed`,
-            `${accumulateResult.failedEvaluating} failed evaluating`,
+            `${accumulatedResult.totalCount} run`,
+            `${accumulatedResult.passed} passed`,
+            `${accumulatedResult.skipped} skipped`,
+            `${accumulatedResult.failed} failed`,
+            `${accumulatedResult.failedEvaluating} failed evaluating`,
         ]);
     }
 

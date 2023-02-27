@@ -161,7 +161,7 @@ export async function getTestReports(inputs: Readonly<ReturnType<typeof parseInp
         ),
     );
     const testResults = allResults.flat();
-    const accumulateResult: TestResult = {
+    const accumulatedResult: TestResult = {
         checkName: '',
         fileName: '',
         summary: '',
@@ -173,27 +173,28 @@ export async function getTestReports(inputs: Readonly<ReturnType<typeof parseInp
         annotations: [],
     };
     for (const tr of testResults) {
-        accumulateResult.totalCount += tr.totalCount;
-        accumulateResult.skipped += tr.skipped;
-        accumulateResult.failed += tr.failed;
-        accumulateResult.passed += tr.passed;
-        accumulateResult.failedEvaluating += tr.failedEvaluating;
+        accumulatedResult.totalCount += tr.totalCount;
+        accumulatedResult.skipped += tr.skipped;
+        accumulatedResult.failed += tr.failed;
+        accumulatedResult.passed += tr.passed;
+        accumulatedResult.failedEvaluating += tr.failedEvaluating;
+        accumulatedResult.annotations.push(...tr.annotations);
     }
 
-    core.setOutput('total', accumulateResult.totalCount);
-    core.setOutput('passed', accumulateResult.passed);
-    core.setOutput('skipped', accumulateResult.skipped);
-    core.setOutput('failed', accumulateResult.failed);
-    core.setOutput('failedEvaluating', accumulateResult.failedEvaluating);
+    core.setOutput('total', accumulatedResult.totalCount);
+    core.setOutput('passed', accumulatedResult.passed);
+    core.setOutput('skipped', accumulatedResult.skipped);
+    core.setOutput('failed', accumulatedResult.failed);
+    core.setOutput('failedEvaluating', accumulatedResult.failedEvaluating);
 
-    const foundResults = accumulateResult.totalCount > 0 || accumulateResult.skipped > 0;
+    const foundResults = accumulatedResult.totalCount > 0 || accumulatedResult.skipped > 0;
     if (!foundResults && inputs.requireTests) {
         throw new NoTestsFoundError(`❌ No test results found for ${inputs.checkName}`);
     }
 
     const pullRequest = github.context.payload.pull_request;
     const link = pullRequest?.html_url || github.context.ref;
-    const actualFailed = accumulateResult.failed - accumulateResult.failedEvaluating;
+    const actualFailed = accumulatedResult.failed - accumulatedResult.failedEvaluating;
     const conclusion: 'success' | 'failure' = actualFailed <= 0 ? 'success' : 'failure';
     const headSha = inputs.commit || pullRequest?.head.sha || github.context.sha;
     core.info(`ℹ️ Posting with conclusion '${conclusion}' to ${link} (sha: ${headSha})`);
@@ -201,7 +202,7 @@ export async function getTestReports(inputs: Readonly<ReturnType<typeof parseInp
     core.endGroup();
 
     return {
-        accumulateResult,
+        accumulatedResult,
         testResults,
         conclusion,
         headSha,
