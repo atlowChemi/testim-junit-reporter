@@ -24,7 +24,7 @@ export async function run(): Promise<void> {
         const supportsJobSummary = process.env['GITHUB_STEP_SUMMARY'];
         if (supportsJobSummary) {
             try {
-                await attachSummary(testResults);
+                await attachSummary(accumulateResult, testResults);
             } catch (error) {
                 core.error(`❌ Failed to set the summary using the provided token. (${error})`);
             }

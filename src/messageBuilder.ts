@@ -73,14 +73,15 @@ export async function annotateTestResult(testResult: TestResult, token: string, 
     }
 }
 
-export async function attachSummary(testResults: TestResult[]): Promise<void> {
+export async function attachSummary(accumulateResult: TestResult, testResults: TestResult[]): Promise<void> {
     const table: SummaryTableRow[] = [
         [
-            { data: '', header: true },
+            { data: 'Name', header: true },
             { data: 'Tests', header: true },
             { data: 'Passed ✅', header: true },
             { data: 'Skipped ↪️', header: true },
             { data: 'Failed ❌', header: true },
+            { data: 'Failed Evaluating ⚠️', header: true },
         ],
     ];
 
@@ -93,7 +94,14 @@ export async function attachSummary(testResults: TestResult[]): Promise<void> {
     ];
 
     for (const testResult of testResults) {
-        table.push([`${testResult.checkName}`, `${testResult.totalCount} run`, `${testResult.passed} passed`, `${testResult.skipped} skipped`, `${testResult.failed} failed`]);
+        table.push([
+            `${testResult.checkName}`,
+            `${testResult.totalCount} run`,
+            `${testResult.passed} passed`,
+            `${testResult.skipped} skipped`,
+            `${testResult.failed} failed`,
+            `${testResult.failedEvaluating} failed evaluating`,
+        ]);
 
         const annotations = testResult.annotations.filter(annotation => annotation.annotation_level !== 'notice');
 
@@ -106,6 +114,16 @@ export async function attachSummary(testResults: TestResult[]): Promise<void> {
         }
     }
 
-    await core.summary.addTable(table).write();
-    await core.summary.addTable(detailsTable).write();
+    if (testResults.length > 1) {
+        table.push([
+            'Total',
+            `${accumulateResult.totalCount} run`,
+            `${accumulateResult.passed} passed`,
+            `${accumulateResult.skipped} skipped`,
+            `${accumulateResult.failed} failed`,
+            `${accumulateResult.failedEvaluating} failed evaluating`,
+        ]);
+    }
+
+    await core.summary.addHeading('Overall').addTable(table).addSeparator().addHeading('Details').addTable(detailsTable).write();
 }

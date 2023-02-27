@@ -7,6 +7,8 @@ import { escapeEmoji, retrieve } from './utils';
 import type { parseInputs } from './inputParser';
 
 interface InternalTestResult {
+    name?: string;
+    fileName: string;
     skipped: number;
     totalCount: number;
     failedEvaluating: number;
@@ -14,6 +16,7 @@ interface InternalTestResult {
 }
 
 export interface TestResult {
+    fileName: string;
     checkName: string;
     summary: string;
     totalCount: number;
@@ -28,11 +31,10 @@ export interface Annotation {
     annotation_level: 'failure' | 'notice' | 'warning';
     title: string;
     message: string;
-    resultLink: string;
-    classname: string;
-    end_line: string;
     path: string;
-    start_line: string;
+    end_line: number;
+    start_line: number;
+    raw_details: string;
 }
 
 interface JUnitTestCase {
@@ -66,11 +68,11 @@ async function parseFile(file: string) {
     const parser = new XMLParser({ allowBooleanAttributes: true, ignoreAttributes: false, attributeNamePrefix: '' });
     const report = parser.parse(data) as Partial<JUnitReport>;
 
-    return parseSuite(report);
+    return parseSuite(report, file);
 }
 
-async function parseSuite({ testsuites: { testsuite } = {} }: Partial<JUnitReport> = {}) {
-    const result: InternalTestResult = { totalCount: 0, skipped: 0, failedEvaluating: parseInt(testsuite?.['failure-evaluating'] || '0') || 0, annotations: [] };
+async function parseSuite({ testsuites: { testsuite } = {} }: Partial<JUnitReport> = {}, fileName: string) {
+    const result: InternalTestResult = { fileName, name: testsuite?.name, totalCount: 0, skipped: 0, failedEvaluating: parseInt(testsuite?.['failure-evaluating'] || '0') || 0, annotations: [] };
     if (!testsuite?.testcase) {
         return result;
     }
@@ -87,11 +89,10 @@ async function parseSuite({ testsuites: { testsuite } = {} }: Partial<JUnitRepor
             annotation_level: success ? 'notice' : 'failure',
             title: escapeEmoji(name),
             message: escapeEmoji((failure?.message || name).trim()),
-            classname: escapeEmoji(classname),
-            resultLink: systemOut,
-            end_line: '',
-            path: '',
-            start_line: '',
+            raw_details: `${escapeEmoji(classname)}:\n[See failure](${systemOut})`,
+            path: systemOut,
+            end_line: 1,
+            start_line: 1,
         });
     }
     return result;
@@ -99,16 +100,20 @@ async function parseSuite({ testsuites: { testsuite } = {} }: Partial<JUnitRepor
 
 async function parseTestReports(checkName: string, summary: string, reportPathsGlob: string) {
     core.debug(`Process test report for: ${reportPathsGlob} (${checkName})`);
-    const res: TestResult = { annotations: [], checkName, summary, totalCount: 0, skipped: 0, passed: 0, failed: 0, failedEvaluating: 0 };
+    const res: TestResult = { annotations: [], checkName, fileName: '', summary, totalCount: 0, skipped: 0, passed: 0, failed: 0, failedEvaluating: 0 };
 
     const globber = await glob.create(reportPathsGlob);
     for await (const file of globber.globGenerator()) {
         core.debug(`Parsing report file: ${file}`);
 
-        const { totalCount, skipped, annotations, failedEvaluating } = await parseFile(file);
+        const { totalCount, skipped, annotations, failedEvaluating, name, fileName } = await parseFile(file);
         if (totalCount === 0) {
             continue;
         }
+        if (name) {
+            res.checkName = name;
+        }
+        res.fileName = fileName;
         res.totalCount += totalCount;
         res.skipped += skipped;
         res.failedEvaluating += failedEvaluating;
@@ -130,6 +135,7 @@ export async function getTestReports(inputs: Readonly<ReturnType<typeof parseInp
     const testResults: TestResult[] = [];
     const accumulateResult: TestResult = {
         checkName: '',
+        fileName: '',
         summary: '',
         totalCount: 0,
         skipped: 0,
