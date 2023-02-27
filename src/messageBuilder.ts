@@ -74,10 +74,10 @@ export async function annotateTestResult(testResult: TestResult, token: string, 
 }
 
 const statusToColorDictionary = {
-    draft: ['#D8DEFF', '#3D5AFE'],
-    active: ['#D1F1E4', '#208C5F'],
-    quarantine: ['#fedfe2', '#D33240'],
-    evaluating: ['#FFEDE2', '#F96400'],
+    draft: '🔵',
+    active: '🟢',
+    quarantine: '🔴',
+    evaluating: '🟡',
 };
 
 export async function attachSummary(accumulatedResult: TestResult, testResults: TestResult[]): Promise<void> {
@@ -118,13 +118,12 @@ export async function attachSummary(accumulatedResult: TestResult, testResults: 
 
         const annotations = hasAnnotations ? testResult.annotations.filter(annotation => annotation.annotation_level !== 'notice') : [];
         for (const annotation of annotations) {
-            const [background, foreground] = statusToColorDictionary[annotation.testStatus as keyof typeof statusToColorDictionary];
-            const style = `background: ${background}; border: 1px solid ${foreground}; color: ${foreground}; height: 30px; width: 110px; border-radius: 4px; display: inline-flex; justify-content: center; align-self: center; align-items: center;`;
+            const color = statusToColorDictionary[annotation.testStatus as keyof typeof statusToColorDictionary];
             detailsTable.push([
                 `${testResult.checkName}`,
                 `<a href="${annotation.path}">${annotation.title}</a>`,
                 `${annotation.annotation_level === 'notice' ? '✅ pass' : `❌ ${annotation.annotation_level}`}`,
-                `<div style="${style}">${annotation.testStatus}</div>`,
+                `${color} ${annotation.testStatus} ${color}`,
             ]);
         }
     }
