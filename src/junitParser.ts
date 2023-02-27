@@ -3,7 +3,7 @@ import * as core from '@actions/core';
 import * as glob from '@actions/glob';
 import * as github from '@actions/github';
 import { XMLParser } from 'fast-xml-parser';
-import { escapeEmoji, retrieve } from './utils';
+import { escapeEmoji, retrieve, parseTestimFailureMessage } from './utils';
 import type { parseInputs } from './inputParser';
 
 interface InternalTestResult {
@@ -88,8 +88,8 @@ async function parseSuite({ testsuites: { testsuite } = {} }: Partial<JUnitRepor
         result.annotations.push({
             annotation_level: success ? 'notice' : 'failure',
             title: escapeEmoji(name),
-            message: escapeEmoji((failure?.message || name).trim()),
-            raw_details: `${escapeEmoji(classname)}:\n[See failure](${systemOut})`,
+            message: parseTestimFailureMessage(failure?.message || ''),
+            raw_details: `${escapeEmoji(classname)} - ${name}:\n(${failure?.message})`,
             path: systemOut,
             end_line: 1,
             start_line: 1,
