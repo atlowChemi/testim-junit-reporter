@@ -50,5 +50,5 @@ export function parseTestimFailureMessage(textContent: string) {
         .split('https://')
         .at(1);
 
-    return `${message}<br /> (See here)[https://${link}]`;
+    return `${message}\nhttps://${link}`;
 }

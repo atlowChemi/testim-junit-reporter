@@ -109,7 +109,11 @@ export async function attachSummary(accumulateResult: TestResult, testResults: T
             detailsTable.push([`-`, `No test annotations available`, `-`]);
         } else {
             for (const annotation of annotations) {
-                detailsTable.push([`${testResult.checkName}`, `${annotation.title}`, `${annotation.annotation_level === 'notice' ? '✅ pass' : `❌ ${annotation.annotation_level}`}`]);
+                detailsTable.push([
+                    `${testResult.checkName}`,
+                    `<a href="${annotation.path}">${annotation.title}</a>`,
+                    `${annotation.annotation_level === 'notice' ? '✅ pass' : `❌ ${annotation.annotation_level}`}`,
+                ]);
             }
         }
     }
