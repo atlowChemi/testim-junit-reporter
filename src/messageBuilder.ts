@@ -15,7 +15,8 @@ async function annotateTestResult(testResult: TestResult, token: string, headSha
 
     core.info(`ℹ️ - ${testResult.checkName} - ${title}`);
 
-    const conclusion: 'success' | 'failure' = testResult.failed <= 0 ? 'success' : 'failure';
+    const actualFailed = testResult.failed - testResult.failedEvaluating;
+    const conclusion: 'success' | 'failure' = actualFailed <= 0 ? 'success' : 'failure';
 
     for (const annotation of annotations) {
         core.info(`   🧪 - ${annotation.message.split('\n', 1)[0]}`);
