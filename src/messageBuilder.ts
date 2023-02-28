@@ -218,7 +218,7 @@ export async function publishCommentOnPullRequest(token: string, commit: string,
     };
     const tableHTML = `<table>${table.map(tableMapper).join('')}</table>`;
 
-    const body = `<h1 id="testim-junit-reporter-msg">Test Result Summary</h1><br />Parsed ${testResults.length} JUnit files, and has ended with status <b>${conclusion}</b><br />${tableHTML}`;
+    const body = `<h1 id="testim-junit-reporter-msg">Test Result Summary</h1><br />Parsed <b><code>${testResults.length}</code></b> JUnit files, and has ended with status <b><code>${conclusion}</code></b><br /><br />${tableHTML}`;
 
     if (comment_id) {
         core.info(`ℹ️ - Updating existing comment: ${comment_id} on PR: #${prNumber}`);
