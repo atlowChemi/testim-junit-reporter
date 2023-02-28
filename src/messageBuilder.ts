@@ -1,9 +1,10 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import type { TestResult } from './junitParser';
+import type { parseInputs } from './inputParser';
+import type { getTestReports, TestResult } from './junitParser';
 import type { SummaryTableRow } from '@actions/core/lib/summary';
 
-export async function annotateTestResult(testResult: TestResult, token: string, headSha: string, updateCheck: boolean, jobName: string): Promise<void> {
+async function annotateTestResult(testResult: TestResult, token: string, headSha: string, updateCheck: boolean, jobName: string): Promise<void> {
     const annotations = testResult.annotations.filter(annotation => annotation.annotation_level !== 'notice');
     const foundResults = testResult.totalCount > 0 || testResult.skipped > 0;
 
@@ -80,7 +81,7 @@ const statusToColorDictionary = {
     evaluating: '🟡',
 };
 
-export async function attachSummary(accumulatedResult: TestResult, testResults: TestResult[]): Promise<void> {
+async function attachSummary(accumulatedResult: TestResult, testResults: TestResult[]): Promise<void> {
     const table: SummaryTableRow[] = [
         [
             { data: 'Name', header: true },
@@ -140,4 +141,63 @@ export async function attachSummary(accumulatedResult: TestResult, testResults: 
     }
 
     await core.summary.addHeading('Overall').addTable(table).addSeparator().addHeading('Details').addTable(detailsTable).write();
+}
+
+export async function publishAnnotations(inputs: Readonly<ReturnType<typeof parseInputs>>, { accumulatedResult, testResults, conclusion, headSha }: Awaited<ReturnType<typeof getTestReports>>) {
+    core.startGroup(`🚀 Publish results`);
+    try {
+        for (const testResult of testResults) {
+            await annotateTestResult(testResult, inputs.token, headSha, inputs.updateCheck, inputs.jobName);
+        }
+    } catch (error) {
+        core.error(`❌ Failed creating a check using the provided token. (${error})`);
+        core.warning(
+            `⚠️ This usually indicates insufficient permissions. More details: https://docs.github.com/en/actions/security-guides/automatic-token-authentication#permissions-for-the-github_token`,
+        );
+    }
+
+    const supportsJobSummary = process.env['GITHUB_STEP_SUMMARY'];
+    if (supportsJobSummary) {
+        try {
+            await attachSummary(accumulatedResult, testResults);
+        } catch (error) {
+            core.error(`❌ Failed to set the summary using the provided token. (${error})`);
+        }
+    } else {
+        core.warning(`⚠️ Your environment seems to not support job summaries.`);
+    }
+
+    if (inputs.failOnFailure && conclusion === 'failure') {
+        core.setFailed(`❌ Tests reported ${accumulatedResult.failed} failures`);
+    }
+
+    core.endGroup();
+}
+
+export async function publishComment(token: string) {
+    const octokit = github.getOctokit(token);
+    const prSearch = await octokit.rest.search.issuesAndPullRequests({ q: `type:pr repo:${github.context.repo.owner}/${github.context.repo.repo} ${github.context.sha}` });
+    const pulls = prSearch.data.items.filter(({ repository, state }) => {
+        const isCurrentRepo = repository?.full_name === `${github.context.repo.owner}/${github.context.repo.repo}`;
+        const isOpen = state === 'open';
+
+        return isCurrentRepo && isOpen;
+    });
+
+    for (const pull of pulls) {
+        const commentsSearch = await octokit.rest.pulls.listReviewComments({
+            ...github.context.repo,
+            pull_number: pull.number,
+        });
+        const comments = commentsSearch.data.filter(({ user, body }) => user.login === 'github-actions' && body.startsWith('Test Result Summary'));
+        const comment_id = comments.at(-1)?.id;
+
+        const body = `Test Result Summary<br /><h3>Whoopy</h3>`;
+
+        if (comment_id) {
+            await octokit.rest.pulls.updateReviewComment({ ...github.context.repo, comment_id, body });
+        } else {
+            await octokit.rest.pulls.createReviewComment({ ...github.context.repo, pull_number: pull.number, body });
+        }
+    }
 }
