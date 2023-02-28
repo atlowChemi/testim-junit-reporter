@@ -3,7 +3,7 @@ import * as core from '@actions/core';
 import { delay } from './utils';
 import { parseInputs } from './inputParser';
 import { getTestReports } from './junitParser';
-import { publishAnnotations, publishComment } from './messageBuilder';
+import { publishAnnotations, publishCommentOnPullRequest } from './messageBuilder';
 
 export async function run(): Promise<void> {
     try {
@@ -11,7 +11,7 @@ export async function run(): Promise<void> {
         const reports = await getTestReports(inputs);
         await publishAnnotations(inputs, reports);
         await delay(1000);
-        await publishComment(inputs.token);
+        await publishCommentOnPullRequest(inputs.token, inputs.commit);
     } catch (error: any) {
         core.setFailed(error.message);
     }

@@ -175,36 +175,33 @@ export async function publishAnnotations(inputs: Readonly<ReturnType<typeof pars
     core.endGroup();
 }
 
-export async function publishComment(token: string) {
+export async function publishCommentOnPullRequest(token: string, commit: string) {
+    const pullRequest = github.context.payload.pull_request;
+    if (!pullRequest) {
+        return;
+    }
+
+    const prNumber = pullRequest.number;
+    const headSha = commit || pullRequest.head.sha || github.context.sha;
+    core.info(`Got PR number ${prNumber} with SHA: ${headSha}`);
+
     const octokit = github.getOctokit(token);
-    const prSearch = await octokit.rest.search.issuesAndPullRequests({ q: `type:pr repo:${github.context.repo.owner}/${github.context.repo.repo} ${github.context.sha}` });
-    core.info(`found ${prSearch.data.total_count} matching items at ${prSearch.url} with status ${prSearch.status}`);
-    const pulls = prSearch.data.items.filter(({ repository, state }) => {
-        const isCurrentRepo = repository?.full_name === `${github.context.repo.owner}/${github.context.repo.repo}`;
-        const isOpen = state === 'open';
-
-        return isCurrentRepo && isOpen;
+    const commentsSearch = await octokit.rest.pulls.listReviewComments({
+        ...github.context.repo,
+        pull_number: prNumber,
     });
-    core.info(`found ${pulls.length} PRs from the correct repo which are open.`);
+    core.info(`found ${commentsSearch.data.length} comments at ${commentsSearch.url} with status ${commentsSearch.status}`);
+    delay(500);
+    const comments = commentsSearch.data.filter(({ user, body }) => user.login === 'github-actions' && body.startsWith('Test Result Summary'));
+    const comment_id = comments.at(-1)?.id;
 
-    for (const pull of pulls) {
-        const commentsSearch = await octokit.rest.pulls.listReviewComments({
-            ...github.context.repo,
-            pull_number: pull.number,
-        });
-        core.info(`found ${commentsSearch.data.length} comments at ${commentsSearch.url} with status ${commentsSearch.status}`);
-        delay(500);
-        const comments = commentsSearch.data.filter(({ user, body }) => user.login === 'github-actions' && body.startsWith('Test Result Summary'));
-        const comment_id = comments.at(-1)?.id;
+    const body = `Test Result Summary<br /><h3>Whoopy</h3>`;
 
-        const body = `Test Result Summary<br /><h3>Whoopy</h3>`;
-
-        if (comment_id) {
-            core.info(`Updating existing comment: ${comment_id} on PR: #${pull.number}`);
-            await octokit.rest.pulls.updateReviewComment({ ...github.context.repo, comment_id, body });
-        } else {
-            core.info(`Publishing new comment on PR: #${pull.number}`);
-            await octokit.rest.pulls.createReviewComment({ ...github.context.repo, pull_number: pull.number, body });
-        }
+    if (comment_id) {
+        core.info(`Updating existing comment: ${comment_id} on PR: #${prNumber}`);
+        await octokit.rest.pulls.updateReviewComment({ ...github.context.repo, comment_id, body });
+    } else {
+        core.info(`Publishing new comment on PR: #${prNumber}`);
+        await octokit.rest.pulls.createReviewComment({ ...github.context.repo, pull_number: prNumber, body });
     }
 }
