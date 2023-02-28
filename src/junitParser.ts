@@ -3,7 +3,7 @@ import * as core from '@actions/core';
 import * as glob from '@actions/glob';
 import * as github from '@actions/github';
 import { XMLParser } from 'fast-xml-parser';
-import { escapeEmoji, retrieve, parseTestimFailureMessage, getTestStatusesFromPublicAPI } from './utils';
+import { escapeEmoji, retrieve, castArray, parseTestimFailureMessage, getTestStatusesFromPublicAPI } from './utils';
 import type { parseInputs } from './inputParser';
 
 interface InternalTestResult {
@@ -57,7 +57,7 @@ interface JUnitSuite {
     skipped: string;
     tests: string;
     timestamp: string;
-    testcase: JUnitTestCase[];
+    testcase: JUnitTestCase | JUnitTestCase[];
 }
 interface JUnitReport {
     testsuite?: JUnitSuite;
@@ -81,9 +81,10 @@ async function parseSuite(report: JUnitReport, fileName: string, projectTokenDic
         return result;
     }
 
-    const testListInfo = await getTestStatusesFromPublicAPI(testsuite.testcase, projectTokenDictionaryStrs);
+    const testCases = castArray(testsuite.testcase);
+    const testListInfo = await getTestStatusesFromPublicAPI(testCases, projectTokenDictionaryStrs);
 
-    for (const { failure, skipped, name, ['system-out']: systemOut, classname } of testsuite.testcase) {
+    for (const { failure, skipped, name, ['system-out']: systemOut, classname } of testCases) {
         result.totalCount++;
         const success = !failure;
 

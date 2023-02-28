@@ -31,6 +31,10 @@ export function escapeEmoji(input: string) {
     return input.replace(regex, ``);
 }
 
+export function castArray<T>(value: T | T[]) {
+    return Array.isArray(value) ? value : [value];
+}
+
 function findMatchingOption(message: string, ...strings: string[]) {
     for (const str of strings) {
         const index = message.indexOf(str);
