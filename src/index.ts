@@ -12,7 +12,7 @@ export async function run(): Promise<void> {
         core.startGroup(`🚀 Publish results`);
         await publishAnnotations(inputs, reports);
         await delay(1000);
-        await publishCommentOnPullRequest(inputs.token, inputs.commit);
+        await publishCommentOnPullRequest(inputs.token, inputs.commit, reports);
         core.endGroup();
     } catch (error: any) {
         core.setFailed(error.message);

@@ -172,33 +172,59 @@ export async function publishAnnotations(inputs: Readonly<ReturnType<typeof pars
     }
 }
 
-export async function publishCommentOnPullRequest(token: string, commit: string) {
+export async function publishCommentOnPullRequest(token: string, commit: string, { accumulatedResult, testResults, conclusion, headSha }: Awaited<ReturnType<typeof getTestReports>>) {
     const pullRequest = github.context.payload.pull_request;
     if (!pullRequest) {
         return;
     }
 
     const prNumber = pullRequest.number;
-    const headSha = commit || pullRequest.head.sha || github.context.sha;
-    core.info(`Got PR number ${prNumber} with SHA: ${headSha}`);
+    core.info(`ℹ️ - Got PR number ${prNumber} with SHA: ${headSha}`);
 
     const octokit = github.getOctokit(token);
     const commentsSearch = await octokit.rest.issues.listComments({
         ...github.context.repo,
         issue_number: prNumber,
     });
-    core.info(`found ${commentsSearch.data.length} comments at ${commentsSearch.url} with status ${commentsSearch.status}`);
+    core.info(`ℹ️ - found ${commentsSearch.data.length} comments at ${commentsSearch.url} with status ${commentsSearch.status}`);
     delay(500);
-    const comments = commentsSearch.data.filter(({ user, body }) => user?.login === 'github-actions' && body?.startsWith('Test Result Summary'));
+    const comments = commentsSearch.data.filter(({ user, body_html }) => user?.login === 'github-actions' && body_html?.startsWith('<h1 id="testim-junit-reporter-msg">'));
+    core.info(`ℹ️ - found ${comments.length} comments by github-actions, starting with correct HTML`);
     const comment_id = comments.at(-1)?.id;
 
-    const body = `Test Result Summary<br /><h3>Whoopy</h3>`;
+    const table: SummaryTableRow[] = [
+        [
+            { data: 'Name', header: true },
+            { data: 'Tests', header: true },
+            { data: 'Passed ✅', header: true },
+            { data: 'Skipped ↪️', header: true },
+            { data: 'Failed ❌', header: true },
+            { data: 'Failed Evaluating ⚠️', header: true },
+        ],
+        [
+            'Total',
+            `${accumulatedResult.totalCount} run`,
+            `${accumulatedResult.passed} passed`,
+            `${accumulatedResult.skipped} skipped`,
+            `${accumulatedResult.failed} failed`,
+            `${accumulatedResult.failedEvaluating} failed evaluating`,
+        ],
+    ];
+
+    const tableMapper = (row: SummaryTableRow) => `<tr>${row.map(rowMapper).join('')}</tr>`;
+    const rowMapper = (row: SummaryTableRow[number]) => {
+        const htmlElement = typeof row === 'string' || !row.header ? 'td' : 'th';
+        return `<${htmlElement}>${typeof row === 'string' ? row : row.data}</${htmlElement}>`;
+    };
+    const tableHTML = `<table>${table.map(tableMapper).join('')}</table>`;
+
+    const body = `<h1 id="testim-junit-reporter-msg">Test Result Summary</h1><br />Parsed ${testResults.length} JUnit files, and has ended with status <b>${conclusion}</b><br />${tableHTML}`;
 
     if (comment_id) {
-        core.info(`Updating existing comment: ${comment_id} on PR: #${prNumber}`);
+        core.info(`ℹ️ - Updating existing comment: ${comment_id} on PR: #${prNumber}`);
         await octokit.rest.issues.updateComment({ ...github.context.repo, comment_id, body });
     } else {
-        core.info(`Publishing new comment on PR: #${prNumber}`);
+        core.info(`ℹ️ - Publishing new comment on PR: #${prNumber}`);
         await octokit.rest.issues.createComment({ ...github.context.repo, issue_number: prNumber, body });
     }
 }
