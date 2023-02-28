@@ -1,5 +1,6 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
+import { delay } from './utils';
 import type { parseInputs } from './inputParser';
 import type { getTestReports, TestResult } from './junitParser';
 import type { SummaryTableRow } from '@actions/core/lib/summary';
@@ -189,6 +190,7 @@ export async function publishComment(token: string) {
             ...github.context.repo,
             pull_number: pull.number,
         });
+        delay(500);
         const comments = commentsSearch.data.filter(({ user, body }) => user.login === 'github-actions' && body.startsWith('Test Result Summary'));
         const comment_id = comments.at(-1)?.id;
 
