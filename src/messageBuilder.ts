@@ -178,18 +178,21 @@ export async function publishAnnotations(inputs: Readonly<ReturnType<typeof pars
 export async function publishComment(token: string) {
     const octokit = github.getOctokit(token);
     const prSearch = await octokit.rest.search.issuesAndPullRequests({ q: `type:pr repo:${github.context.repo.owner}/${github.context.repo.repo} ${github.context.sha}` });
+    core.info(`found ${prSearch.data.total_count} matching items at ${prSearch.url} with status ${prSearch.status}`);
     const pulls = prSearch.data.items.filter(({ repository, state }) => {
         const isCurrentRepo = repository?.full_name === `${github.context.repo.owner}/${github.context.repo.repo}`;
         const isOpen = state === 'open';
 
         return isCurrentRepo && isOpen;
     });
+    core.info(`found ${pulls.length} PRs from the correct repo which are open.`);
 
     for (const pull of pulls) {
         const commentsSearch = await octokit.rest.pulls.listReviewComments({
             ...github.context.repo,
             pull_number: pull.number,
         });
+        core.info(`found ${commentsSearch.data.length} comments at ${commentsSearch.url} with status ${commentsSearch.status}`);
         delay(500);
         const comments = commentsSearch.data.filter(({ user, body }) => user.login === 'github-actions' && body.startsWith('Test Result Summary'));
         const comment_id = comments.at(-1)?.id;
@@ -197,8 +200,10 @@ export async function publishComment(token: string) {
         const body = `Test Result Summary<br /><h3>Whoopy</h3>`;
 
         if (comment_id) {
+            core.info(`Updating existing comment: ${comment_id} on PR: #${pull.number}`);
             await octokit.rest.pulls.updateReviewComment({ ...github.context.repo, comment_id, body });
         } else {
+            core.info(`Publishing new comment on PR: #${pull.number}`);
             await octokit.rest.pulls.createReviewComment({ ...github.context.repo, pull_number: pull.number, body });
         }
     }
