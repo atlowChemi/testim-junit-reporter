@@ -101,7 +101,3 @@ export async function getTestStatusesFromPublicAPI(testCases: JUnitTestCase[], p
     projectBranchTestStatusMap.set(mapKey, testListPerProjectAndBranch);
     return await testListPerProjectAndBranch;
 }
-
-export async function delay(ms: number) {
-    return new Promise<void>(res => setTimeout(res, ms));
-}

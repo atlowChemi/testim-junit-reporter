@@ -127,7 +127,7 @@ async function parseTestReports(checkName: string, summary: string, reportPathsG
         if (totalCount === 0) {
             continue;
         }
-        const failed = annotations.filter(an => an.annotation_level === 'failure').length;
+        const failed = annotations.filter(an => an.annotation_level !== 'notice').length;
         const passed = totalCount - failed - skipped;
         testResults.push({
             summary,

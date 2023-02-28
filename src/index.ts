@@ -1,6 +1,5 @@
 import 'source-map-support/register';
 import * as core from '@actions/core';
-import { delay } from './utils';
 import { parseInputs } from './inputParser';
 import { getTestReports } from './junitParser';
 import { publishAnnotations, publishCommentOnPullRequest } from './messageBuilder';
@@ -11,8 +10,7 @@ export async function run(): Promise<void> {
         const reports = await getTestReports(inputs);
         core.startGroup(`🚀 Publish results`);
         await publishAnnotations(inputs, reports);
-        await delay(1000);
-        await publishCommentOnPullRequest(inputs.token, inputs.commit, reports);
+        await publishCommentOnPullRequest(inputs.token, reports);
         core.endGroup();
     } catch (error: any) {
         core.setFailed(error.message);

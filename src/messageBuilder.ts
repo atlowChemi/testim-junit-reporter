@@ -1,6 +1,5 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import { delay } from './utils';
 import type { parseInputs } from './inputParser';
 import type { getTestReports, TestResult } from './junitParser';
 import type { SummaryTableRow } from '@actions/core/lib/summary';
@@ -172,8 +171,8 @@ export async function publishAnnotations(inputs: Readonly<ReturnType<typeof pars
     }
 }
 
-export async function publishCommentOnPullRequest(token: string, commit: string, { accumulatedResult, testResults, conclusion, headSha }: Awaited<ReturnType<typeof getTestReports>>) {
-    const pullRequest = github.context.payload.pull_request;
+export async function publishCommentOnPullRequest(token: string, { accumulatedResult, testResults, conclusion, headSha }: Awaited<ReturnType<typeof getTestReports>>) {
+    const pullRequest = github.context.payload.pull_request || { number: 9 };
     if (!pullRequest) {
         return;
     }
@@ -187,8 +186,7 @@ export async function publishCommentOnPullRequest(token: string, commit: string,
         issue_number: prNumber,
     });
     core.info(`ℹ️ - found ${commentsSearch.data.length} comments at ${commentsSearch.url} with status ${commentsSearch.status}`);
-    delay(500);
-    const comments = commentsSearch.data.filter(({ user, body_html }) => user?.login === 'github-actions' && body_html?.startsWith('<h1 id="testim-junit-reporter-msg">'));
+    const comments = commentsSearch.data.filter(({ user, body }) => user?.login === 'github-actions[bot]' && body?.startsWith('<h1 id="testim-junit-reporter-msg">'));
     core.info(`ℹ️ - found ${comments.length} comments by github-actions, starting with correct HTML`);
     const comment_id = comments.at(-1)?.id;
 
@@ -217,8 +215,10 @@ export async function publishCommentOnPullRequest(token: string, commit: string,
         return `<${htmlElement}>${typeof row === 'string' ? row : row.data}</${htmlElement}>`;
     };
     const tableHTML = `<table>${table.map(tableMapper).join('')}</table>`;
+    const title = `<h1 id="testim-junit-reporter-msg">Test Result Summary ${conclusion === 'success' ? '✅' : '❌'}</h1>`;
+    const summary = `Parsed <b><code>${testResults.length}</code></b> JUnit files, and has ended with status <b><code>${conclusion}</code></b>`;
 
-    const body = `<h1 id="testim-junit-reporter-msg">Test Result Summary</h1><br />Parsed <b><code>${testResults.length}</code></b> JUnit files, and has ended with status <b><code>${conclusion}</code></b><br /><br />${tableHTML}`;
+    const body = `${title}<br />${summary}<br /><br />${tableHTML}`;
 
     if (comment_id) {
         core.info(`ℹ️ - Updating existing comment: ${comment_id} on PR: #${prNumber}`);
