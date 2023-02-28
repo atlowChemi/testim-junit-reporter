@@ -173,7 +173,7 @@ export async function publishAnnotations(inputs: Readonly<ReturnType<typeof pars
 }
 
 export async function publishCommentOnPullRequest(token: string, { accumulatedResult, testResults, conclusion, headSha }: Awaited<ReturnType<typeof getTestReports>>) {
-    const pullRequest = github.context.payload.pull_request || { number: 9 };
+    const pullRequest = github.context.payload.pull_request;
     if (!pullRequest) {
         return;
     }
