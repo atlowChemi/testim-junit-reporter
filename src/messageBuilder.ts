@@ -217,7 +217,8 @@ export async function publishCommentOnPullRequest(token: string, { accumulatedRe
     };
     const tableHTML = `<table>${table.map(tableMapper).join('')}</table>`;
     const title = `<h1 id="testim-junit-reporter-msg">Test Result Summary ${conclusion === 'success' ? '✅' : '❌'}</h1>`;
-    const summary = `Parsed <b><code>${testResults.length}</code></b> JUnit files, and has ended with status <b><code>${conclusion}</code></b>`;
+    const seeFullDetailsLink = `<a href="${pullRequest.html_url}/actions/runs/${github.context.runId}">See full run details</a>.`;
+    const summary = `Parsed <b><code>${testResults.length}</code></b> JUnit files, and has ended with status <b><code>${conclusion}</code></b> ${seeFullDetailsLink}`;
 
     const body = `${title}<br />${summary}<br /><br />${tableHTML}`;
 
