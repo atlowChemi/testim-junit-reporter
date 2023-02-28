@@ -9,9 +9,11 @@ export async function run(): Promise<void> {
     try {
         const inputs = parseInputs();
         const reports = await getTestReports(inputs);
+        core.startGroup(`🚀 Publish results`);
         await publishAnnotations(inputs, reports);
         await delay(1000);
         await publishCommentOnPullRequest(inputs.token, inputs.commit);
+        core.endGroup();
     } catch (error: any) {
         core.setFailed(error.message);
     }

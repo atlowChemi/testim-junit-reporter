@@ -145,7 +145,6 @@ async function attachSummary(accumulatedResult: TestResult, testResults: TestRes
 }
 
 export async function publishAnnotations(inputs: Readonly<ReturnType<typeof parseInputs>>, { accumulatedResult, testResults, conclusion, headSha }: Awaited<ReturnType<typeof getTestReports>>) {
-    core.startGroup(`🚀 Publish results`);
     try {
         for (const testResult of testResults) {
             await annotateTestResult(testResult, inputs.token, headSha, inputs.updateCheck, inputs.jobName);
@@ -171,8 +170,6 @@ export async function publishAnnotations(inputs: Readonly<ReturnType<typeof pars
     if (inputs.failOnFailure && conclusion === 'failure') {
         core.setFailed(`❌ Tests reported ${accumulatedResult.failed} failures`);
     }
-
-    core.endGroup();
 }
 
 export async function publishCommentOnPullRequest(token: string, commit: string) {
@@ -186,22 +183,22 @@ export async function publishCommentOnPullRequest(token: string, commit: string)
     core.info(`Got PR number ${prNumber} with SHA: ${headSha}`);
 
     const octokit = github.getOctokit(token);
-    const commentsSearch = await octokit.rest.pulls.listReviewComments({
+    const commentsSearch = await octokit.rest.issues.listComments({
         ...github.context.repo,
-        pull_number: prNumber,
+        issue_number: prNumber,
     });
     core.info(`found ${commentsSearch.data.length} comments at ${commentsSearch.url} with status ${commentsSearch.status}`);
     delay(500);
-    const comments = commentsSearch.data.filter(({ user, body }) => user.login === 'github-actions' && body.startsWith('Test Result Summary'));
+    const comments = commentsSearch.data.filter(({ user, body }) => user?.login === 'github-actions' && body?.startsWith('Test Result Summary'));
     const comment_id = comments.at(-1)?.id;
 
     const body = `Test Result Summary<br /><h3>Whoopy</h3>`;
 
     if (comment_id) {
         core.info(`Updating existing comment: ${comment_id} on PR: #${prNumber}`);
-        await octokit.rest.pulls.updateReviewComment({ ...github.context.repo, comment_id, body });
+        await octokit.rest.issues.updateComment({ ...github.context.repo, comment_id, body });
     } else {
         core.info(`Publishing new comment on PR: #${prNumber}`);
-        await octokit.rest.pulls.createReviewComment({ ...github.context.repo, pull_number: prNumber, body });
+        await octokit.rest.issues.createComment({ ...github.context.repo, issue_number: prNumber, body });
     }
 }
