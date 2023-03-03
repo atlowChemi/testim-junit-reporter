@@ -201,7 +201,7 @@ export async function publishCommentOnPullRequest(token: string, { accumulatedRe
             { data: 'Failed Evaluating ⚠️', header: true },
         ],
         [
-            'Total',
+            `${github.context.job} Job Total`,
             `${accumulatedResult.totalCount} run`,
             `${accumulatedResult.passed} passed`,
             `${accumulatedResult.skipped} skipped`,
