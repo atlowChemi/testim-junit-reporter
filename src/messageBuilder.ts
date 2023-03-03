@@ -2,7 +2,7 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import type { parseInputs } from './inputParser';
 import type { getTestReports, TestResult } from './junitParser';
-import type { SummaryTableRow } from '@actions/core/lib/summary';
+import type { SummaryTableCell, SummaryTableRow } from '@actions/core/lib/summary';
 
 async function annotateTestResult(testResult: TestResult, token: string, headSha: string, updateCheck: boolean, jobName: string): Promise<void> {
     const annotations = testResult.annotations.filter(annotation => annotation.annotation_level !== 'notice');
@@ -172,6 +172,48 @@ export async function publishAnnotations(inputs: Readonly<ReturnType<typeof pars
     }
 }
 
+function buildTableBasedOnPreviousTable(commentBody: string | undefined, accumulatedResult: TestResult): SummaryTableRow[] {
+    const currentJobRow = [
+        github.context.job,
+        `${accumulatedResult.totalCount} run`,
+        `${accumulatedResult.passed} passed`,
+        `${accumulatedResult.skipped} skipped`,
+        `${accumulatedResult.failed} failed`,
+        `${accumulatedResult.failedEvaluating} failed evaluating`,
+    ];
+    if (!commentBody) {
+        return [
+            [
+                { data: 'Job Name', header: true },
+                { data: 'Tests', header: true },
+                { data: 'Passed ✅', header: true },
+                { data: 'Skipped ↪️', header: true },
+                { data: 'Failed ❌', header: true },
+                { data: 'Failed Evaluating ⚠️', header: true },
+            ],
+            currentJobRow,
+        ];
+    }
+    const previousTable = commentBody
+        .split('<table>')[1]
+        .replace(/<\/(table|tr|td|th)>/g, '')
+        .split('<tr>')
+        .filter(Boolean)
+        .map(tr => tr.replace(/td|th/g, '').split('<>').filter(Boolean));
+    const header = previousTable.shift()!.map<SummaryTableCell>(data => ({ data, header: true }));
+    const rowOfCurrentJob = previousTable.find(tr => tr[0] === github.context.job);
+    if (rowOfCurrentJob) {
+        rowOfCurrentJob[1] = `${accumulatedResult.totalCount} run`;
+        rowOfCurrentJob[2] = `${accumulatedResult.passed} passed`;
+        rowOfCurrentJob[3] = `${accumulatedResult.skipped} skipped`;
+        rowOfCurrentJob[4] = `${accumulatedResult.failed} failed`;
+        rowOfCurrentJob[5] = `${accumulatedResult.failedEvaluating} failed evaluating`;
+    } else {
+        previousTable.push(currentJobRow);
+    }
+    return [header, ...previousTable];
+}
+
 export async function publishCommentOnPullRequest(token: string, { accumulatedResult, testResults, conclusion, headSha }: Awaited<ReturnType<typeof getTestReports>>) {
     const pullRequest = github.context.payload.pull_request;
     if (!pullRequest) {
@@ -189,26 +231,10 @@ export async function publishCommentOnPullRequest(token: string, { accumulatedRe
     core.info(`ℹ️ - found ${commentsSearch.data.length} comments at ${commentsSearch.url} with status ${commentsSearch.status}`);
     const comments = commentsSearch.data.filter(({ user, body }) => user?.login === 'github-actions[bot]' && body?.startsWith('<h1 id="testim-junit-reporter-msg">'));
     core.info(`ℹ️ - found ${comments.length} comments by github-actions, starting with correct HTML`);
-    const comment_id = comments.at(-1)?.id;
+    const comment = comments.at(-1);
+    const comment_id = comment?.id;
 
-    const table: SummaryTableRow[] = [
-        [
-            { data: 'Name', header: true },
-            { data: 'Tests', header: true },
-            { data: 'Passed ✅', header: true },
-            { data: 'Skipped ↪️', header: true },
-            { data: 'Failed ❌', header: true },
-            { data: 'Failed Evaluating ⚠️', header: true },
-        ],
-        [
-            `${github.context.job} Job Total`,
-            `${accumulatedResult.totalCount} run`,
-            `${accumulatedResult.passed} passed`,
-            `${accumulatedResult.skipped} skipped`,
-            `${accumulatedResult.failed} failed`,
-            `${accumulatedResult.failedEvaluating} failed evaluating`,
-        ],
-    ];
+    const table = buildTableBasedOnPreviousTable(comment?.body, accumulatedResult);
 
     const tableMapper = (row: SummaryTableRow) => `<tr>${row.map(rowMapper).join('')}</tr>`;
     const rowMapper = (row: SummaryTableRow[number]) => {
