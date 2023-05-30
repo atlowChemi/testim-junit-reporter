@@ -21,6 +21,7 @@ export function parseInputs() {
         failOnFailure: core.getInput('fail_on_failure') === 'true',
         projectTokenDictionary: core.getMultilineInput('project_api_key_map'),
     };
+    core.info('Parsing input completed');
     core.debug(JSON.stringify(values, undefined, 4));
     core.endGroup();
     return values;

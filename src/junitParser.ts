@@ -117,12 +117,12 @@ async function parseSuite(report: JUnitReport, fileName: string, projectTokenDic
 }
 
 async function parseTestReports(checkName: string, summary: string, reportPathsGlob: string, projectTokenDictionaryStrs: string[]) {
-    core.debug(`Process test report for: ${reportPathsGlob} (${checkName})`);
+    core.info(`Process test report for: ${reportPathsGlob} (${checkName})`);
     const testResults: TestResult[] = [];
 
     const globber = await glob.create(reportPathsGlob);
     for await (const file of globber.globGenerator()) {
-        core.debug(`Parsing report file: ${file}`);
+        core.info(`Parsing report file: ${file}`);
 
         const { totalCount, skipped, annotations, failedEvaluating, name, fileName } = await parseFile(file, projectTokenDictionaryStrs);
         if (totalCount === 0) {
