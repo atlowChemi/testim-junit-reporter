@@ -3,7 +3,8 @@ on:
         tags:
             - "v*"
 
-permissions: write-all
+permissions:
+    contents: write
 
 name: Release
 jobs:
