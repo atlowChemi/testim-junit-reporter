@@ -39,7 +39,7 @@
         "xml-js": "^1.6.11"
     },
     "devDependencies": {
-        "@types/node": "18",
+        "@types/node": "20",
         "@typescript-eslint/parser": "^5.52.0",
         "esbuild": "^0.17.10",
         "eslint": "^8.34.0",
