@@ -47,5 +47,5 @@ inputs:
         required: false
 
 runs:
-    using: 'node16'
+    using: 'node20'
     main: 'lib/index.js'
