@@ -60,7 +60,6 @@ interface JUnitSuite {
     testcase: JUnitTestCase | JUnitTestCase[];
 }
 interface JUnitReport {
-    testsuite?: JUnitSuite;
     testsuites?: { testsuite?: JUnitSuite | JUnitSuite[] };
 }
 
@@ -70,8 +69,8 @@ async function parseFile(file: string, projectTokenDictionaryStrs: string[]) {
     const data: string = fs.readFileSync(file, 'utf8');
     const parser = new XMLParser({ allowBooleanAttributes: true, ignoreAttributes: false, attributeNamePrefix: '' });
     const report = parser.parse(data) as Partial<JUnitReport>;
-    const testSuites = castArray(report.testsuites?.testsuite);
-    return Promise.all((testSuites as JUnitSuite[]).map(async (testSuite: JUnitSuite) => parseSuite(file, projectTokenDictionaryStrs, testSuite)));
+    const testSuites = castArray(report.testsuites?.testsuite || []);
+    return Promise.all(testSuites.map(async testSuite => parseSuite(file, projectTokenDictionaryStrs, testSuite)));
 }
 
 async function parseSuite(fileName: string, projectTokenDictionaryStrs: string[], testSuite: JUnitSuite) {
@@ -213,11 +212,3 @@ export async function getTestReports(inputs: Readonly<ReturnType<typeof parseInp
         headSha,
     };
 }
-// parseTestReports('elad', 'summary', '/Users/eladtal/testim-junit-reporter/testim-junit-reporter-1/src/report-small_res_ui_test_save_delete.xml', [
-//     'testimProjectToken:token',
-//     'testimProjectToken2:token2',
-// ]);
-parseTestReports('elad', 'summary', '/Users/eladtal/testim-junit-reporter/testim-junit-reporter-1/src/report-test_plan_sanity_params_test_plan_basic_and_basic_selenium.xml', [
-    'testimProjectToken:token',
-    'testimProjectToken2:token2',
-]);
