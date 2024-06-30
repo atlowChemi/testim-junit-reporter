@@ -70,36 +70,25 @@ async function parseFile(file: string, projectTokenDictionaryStrs: string[]) {
     const data: string = fs.readFileSync(file, 'utf8');
     const parser = new XMLParser({ allowBooleanAttributes: true, ignoreAttributes: false, attributeNamePrefix: '' });
     const report = parser.parse(data) as Partial<JUnitReport>;
-    const testsuites = castArray(report.testsuites?.testsuite);
-    const result: InternalTestResult[] = [];
-    for (const testsuite of testsuites) {
-        await parseSuite(file, projectTokenDictionaryStrs, testsuite as JUnitSuite, result);
-    }
-    return result;
+    const testSuites = castArray(report.testsuites?.testsuite);
+    return Promise.all((testSuites as JUnitSuite[]).map(async (testSuite: JUnitSuite) => parseSuite(file, projectTokenDictionaryStrs, testSuite)));
 }
 
-async function parseSuite(fileName: string, projectTokenDictionaryStrs: string[], testsuite: JUnitSuite, result: InternalTestResult[]) {
-    const testSuiteResult: InternalTestResult = {
-        fileName,
-        name: testsuite?.name,
-        totalCount: 0,
-        skipped: 0,
-        failedEvaluating: parseInt(testsuite?.['failure-evaluating'] || '0') || 0,
-        annotations: [],
-    };
-    if (!testsuite?.testcase) {
-        return result.push(testSuiteResult);
+async function parseSuite(fileName: string, projectTokenDictionaryStrs: string[], testSuite: JUnitSuite) {
+    const result: InternalTestResult = { fileName, name: testSuite?.name, totalCount: 0, skipped: 0, failedEvaluating: parseInt(testSuite?.['failure-evaluating'] || '0') || 0, annotations: [] };
+    if (!testSuite?.testcase) {
+        return result;
     }
 
-    const testCases = castArray(testsuite.testcase);
+    const testCases = castArray(testSuite.testcase);
     const testListInfo = await getTestStatusesFromPublicAPI(testCases, projectTokenDictionaryStrs);
 
     for (const { failure, skipped, name, ['system-out']: systemOut, classname } of testCases) {
-        testSuiteResult.totalCount++;
+        result.totalCount++;
         const success = !failure;
 
         if (typeof skipped !== 'undefined') {
-            testSuiteResult.skipped++;
+            result.skipped++;
         }
 
         const isTestimTest = systemOut?.startsWith('https://app.testim.io/#/project');
@@ -111,7 +100,7 @@ async function parseSuite(fileName: string, projectTokenDictionaryStrs: string[]
             annotation_level = testStatus === 'evaluating' ? 'warning' : 'failure';
         }
 
-        testSuiteResult.annotations.push({
+        result.annotations.push({
             testStatus,
             isTestimTest,
             annotation_level,
@@ -123,7 +112,7 @@ async function parseSuite(fileName: string, projectTokenDictionaryStrs: string[]
             start_line: 1,
         });
     }
-    return result.push(testSuiteResult);
+    return result;
 }
 
 async function parseTestReports(checkName: string, summary: string, reportPathsGlob: string, projectTokenDictionaryStrs: string[]) {
@@ -224,3 +213,11 @@ export async function getTestReports(inputs: Readonly<ReturnType<typeof parseInp
         headSha,
     };
 }
+// parseTestReports('elad', 'summary', '/Users/eladtal/testim-junit-reporter/testim-junit-reporter-1/src/report-small_res_ui_test_save_delete.xml', [
+//     'testimProjectToken:token',
+//     'testimProjectToken2:token2',
+// ]);
+parseTestReports('elad', 'summary', '/Users/eladtal/testim-junit-reporter/testim-junit-reporter-1/src/report-test_plan_sanity_params_test_plan_basic_and_basic_selenium.xml', [
+    'testimProjectToken:token',
+    'testimProjectToken2:token2',
+]);
