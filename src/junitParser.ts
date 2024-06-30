@@ -225,8 +225,3 @@ export async function getTestReports(inputs: Readonly<ReturnType<typeof parseInp
     };
 }
 
-// parseTestReports('elad', 'summary', '/Users/eladtal/testim-junit-reporter/testim-junit-reporter-1/src/report-test_plan_sanity_params_test_plan_basic_and_basic_selenium.xml', ['testimProjectToken:token', 'testimProjectToken2:token2']);
-parseTestReports('elad', 'summary', '/Users/eladtal/testim-junit-reporter/testim-junit-reporter-1/src/report-small_res_ui_test_save_delete.xml', [
-    'testimProjectToken:token',
-    'testimProjectToken2:token2',
-]);
