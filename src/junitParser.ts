@@ -224,4 +224,3 @@ export async function getTestReports(inputs: Readonly<ReturnType<typeof parseInp
         headSha,
     };
 }
-
