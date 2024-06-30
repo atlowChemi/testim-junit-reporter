@@ -65,7 +65,7 @@ interface JUnitReport {
 }
 
 async function parseFile(file: string, projectTokenDictionaryStrs: string[]) {
-    // core.debug(`Parsing file ${file}`);
+    core.debug(`Parsing file ${file}`);
 
     const data: string = fs.readFileSync(file, 'utf8');
     const parser = new XMLParser({ allowBooleanAttributes: true, ignoreAttributes: false, attributeNamePrefix: '' });
@@ -127,12 +127,12 @@ async function parseSuite(fileName: string, projectTokenDictionaryStrs: string[]
 }
 
 async function parseTestReports(checkName: string, summary: string, reportPathsGlob: string, projectTokenDictionaryStrs: string[]) {
-    // core.info(`Process test report for: ${reportPathsGlob} (${checkName})`);
+    core.info(`Process test report for: ${reportPathsGlob} (${checkName})`);
     const testResults: TestResult[] = [];
 
     const globber = await glob.create(reportPathsGlob);
     for await (const file of globber.globGenerator()) {
-        // core.info(`Parsing report file: ${file}`);
+        core.info(`Parsing report file: ${file}`);
         const suites = await parseFile(file, projectTokenDictionaryStrs);
         for (const suite of suites) {
             const { totalCount, skipped, annotations, failedEvaluating, name, fileName } = suite;
