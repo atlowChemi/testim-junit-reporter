@@ -61,35 +61,45 @@ interface JUnitSuite {
 }
 interface JUnitReport {
     testsuite?: JUnitSuite;
-    testsuites?: { testsuite?: JUnitSuite };
+    testsuites?: { testsuite?: JUnitSuite | JUnitSuite[] };
 }
 
 async function parseFile(file: string, projectTokenDictionaryStrs: string[]) {
-    core.debug(`Parsing file ${file}`);
+    // core.debug(`Parsing file ${file}`);
 
     const data: string = fs.readFileSync(file, 'utf8');
     const parser = new XMLParser({ allowBooleanAttributes: true, ignoreAttributes: false, attributeNamePrefix: '' });
     const report = parser.parse(data) as Partial<JUnitReport>;
-
-    return parseSuite(report, file, projectTokenDictionaryStrs);
+    const testsuites = castArray(report.testsuites?.testsuite);
+    const result: InternalTestResult[] = [];
+    for (const testsuite of testsuites) {
+        await parseSuite(file, projectTokenDictionaryStrs, testsuite as JUnitSuite, result);
+    }
+    return result;
 }
 
-async function parseSuite(report: JUnitReport, fileName: string, projectTokenDictionaryStrs: string[]) {
-    const testsuite = report.testsuite || report.testsuites?.testsuite;
-    const result: InternalTestResult = { fileName, name: testsuite?.name, totalCount: 0, skipped: 0, failedEvaluating: parseInt(testsuite?.['failure-evaluating'] || '0') || 0, annotations: [] };
+async function parseSuite(fileName: string, projectTokenDictionaryStrs: string[], testsuite: JUnitSuite, result: InternalTestResult[]) {
+    const testSuiteResult: InternalTestResult = {
+        fileName,
+        name: testsuite?.name,
+        totalCount: 0,
+        skipped: 0,
+        failedEvaluating: parseInt(testsuite?.['failure-evaluating'] || '0') || 0,
+        annotations: [],
+    };
     if (!testsuite?.testcase) {
-        return result;
+        return testsuite;
     }
 
     const testCases = castArray(testsuite.testcase);
     const testListInfo = await getTestStatusesFromPublicAPI(testCases, projectTokenDictionaryStrs);
 
     for (const { failure, skipped, name, ['system-out']: systemOut, classname } of testCases) {
-        result.totalCount++;
+        testSuiteResult.totalCount++;
         const success = !failure;
 
         if (typeof skipped !== 'undefined') {
-            result.skipped++;
+            testSuiteResult.skipped++;
         }
 
         const isTestimTest = systemOut?.startsWith('https://app.testim.io/#/project');
@@ -101,7 +111,7 @@ async function parseSuite(report: JUnitReport, fileName: string, projectTokenDic
             annotation_level = testStatus === 'evaluating' ? 'warning' : 'failure';
         }
 
-        result.annotations.push({
+        testSuiteResult.annotations.push({
             testStatus,
             isTestimTest,
             annotation_level,
@@ -113,34 +123,36 @@ async function parseSuite(report: JUnitReport, fileName: string, projectTokenDic
             start_line: 1,
         });
     }
-    return result;
+    return result.push(testSuiteResult);
 }
 
 async function parseTestReports(checkName: string, summary: string, reportPathsGlob: string, projectTokenDictionaryStrs: string[]) {
-    core.info(`Process test report for: ${reportPathsGlob} (${checkName})`);
+    // core.info(`Process test report for: ${reportPathsGlob} (${checkName})`);
     const testResults: TestResult[] = [];
 
     const globber = await glob.create(reportPathsGlob);
     for await (const file of globber.globGenerator()) {
-        core.info(`Parsing report file: ${file}`);
-
-        const { totalCount, skipped, annotations, failedEvaluating, name, fileName } = await parseFile(file, projectTokenDictionaryStrs);
-        if (totalCount === 0) {
-            continue;
+        // core.info(`Parsing report file: ${file}`);
+        const suites = await parseFile(file, projectTokenDictionaryStrs);
+        for (const suite of suites) {
+            const { totalCount, skipped, annotations, failedEvaluating, name, fileName } = suite;
+            if (totalCount === 0) {
+                continue;
+            }
+            const failed = annotations.filter(an => an.annotation_level !== 'notice').length;
+            const passed = totalCount - failed - skipped;
+            testResults.push({
+                summary,
+                checkName: name || checkName,
+                fileName,
+                totalCount,
+                skipped,
+                failedEvaluating,
+                annotations,
+                failed,
+                passed,
+            });
         }
-        const failed = annotations.filter(an => an.annotation_level !== 'notice').length;
-        const passed = totalCount - failed - skipped;
-        testResults.push({
-            summary,
-            checkName: name || checkName,
-            fileName,
-            totalCount,
-            skipped,
-            failedEvaluating,
-            annotations,
-            failed,
-            passed,
-        });
     }
 
     return testResults;
@@ -212,3 +224,9 @@ export async function getTestReports(inputs: Readonly<ReturnType<typeof parseInp
         headSha,
     };
 }
+
+// parseTestReports('elad', 'summary', '/Users/eladtal/testim-junit-reporter/testim-junit-reporter-1/src/report-test_plan_sanity_params_test_plan_basic_and_basic_selenium.xml', ['testimProjectToken:token', 'testimProjectToken2:token2']);
+parseTestReports('elad', 'summary', '/Users/eladtal/testim-junit-reporter/testim-junit-reporter-1/src/report-small_res_ui_test_save_delete.xml', [
+    'testimProjectToken:token',
+    'testimProjectToken2:token2',
+]);
