@@ -88,7 +88,7 @@ async function parseSuite(fileName: string, projectTokenDictionaryStrs: string[]
         annotations: [],
     };
     if (!testsuite?.testcase) {
-        return testsuite;
+        return result.push(testSuiteResult);
     }
 
     const testCases = castArray(testsuite.testcase);
