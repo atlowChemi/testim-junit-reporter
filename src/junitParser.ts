@@ -60,6 +60,7 @@ interface JUnitSuite {
     testcase: JUnitTestCase | JUnitTestCase[];
 }
 interface JUnitReport {
+    testsuite?: JUnitSuite;
     testsuites?: { testsuite?: JUnitSuite | JUnitSuite[] };
 }
 
@@ -69,17 +70,17 @@ async function parseFile(file: string, projectTokenDictionaryStrs: string[]) {
     const data: string = fs.readFileSync(file, 'utf8');
     const parser = new XMLParser({ allowBooleanAttributes: true, ignoreAttributes: false, attributeNamePrefix: '' });
     const report = parser.parse(data) as Partial<JUnitReport>;
-    const testSuites = castArray(report.testsuites?.testsuite || []);
-    return Promise.all(testSuites.map(async testSuite => parseSuite(file, projectTokenDictionaryStrs, testSuite)));
+    const testsuites = report.testsuite ? castArray(report.testsuite) : castArray(report.testsuites?.testsuite);
+    return Promise.all(testsuites.map(async testsuite => parseSuite(file, projectTokenDictionaryStrs, testsuite)));
 }
 
-async function parseSuite(fileName: string, projectTokenDictionaryStrs: string[], testSuite: JUnitSuite) {
-    const result: InternalTestResult = { fileName, name: testSuite?.name, totalCount: 0, skipped: 0, failedEvaluating: parseInt(testSuite?.['failure-evaluating'] || '0') || 0, annotations: [] };
-    if (!testSuite?.testcase) {
+async function parseSuite(fileName: string, projectTokenDictionaryStrs: string[], testsuite?: JUnitSuite) {
+    const result: InternalTestResult = { fileName, name: testsuite?.name, totalCount: 0, skipped: 0, failedEvaluating: parseInt(testsuite?.['failure-evaluating'] || '0') || 0, annotations: [] };
+    if (!testsuite?.testcase) {
         return result;
     }
 
-    const testCases = castArray(testSuite.testcase);
+    const testCases = castArray(testsuite.testcase);
     const testListInfo = await getTestStatusesFromPublicAPI(testCases, projectTokenDictionaryStrs);
 
     for (const { failure, skipped, name, ['system-out']: systemOut, classname } of testCases) {
