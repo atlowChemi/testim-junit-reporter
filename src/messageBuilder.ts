@@ -55,7 +55,7 @@ async function annotateTestResult(testResult: TestResult, token: string, headSha
             await octokit.rest.checks.update(updateCheckRequest);
         }
     } else {
-        const createCheckRequest = {
+        const createCheckRequest: Parameters<typeof octokit.rest.checks.create>[0] = {
             ...github.context.repo,
             name: testResult.checkName,
             head_sha: headSha,
