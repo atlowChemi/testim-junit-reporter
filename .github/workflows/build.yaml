@@ -27,3 +27,5 @@ jobs:
                 run: yarn format-check
             -   name: Lint
                 run: yarn lint
+            -   name: Unit Test
+                run: yarn test

@@ -115,7 +115,7 @@ async function parseSuite(fileName: string, projectTokenDictionaryStrs: string[]
     return result;
 }
 
-async function parseTestReports(checkName: string, summary: string, reportPathsGlob: string, projectTokenDictionaryStrs: string[]) {
+export async function parseTestReports(checkName: string, summary: string, reportPathsGlob: string, projectTokenDictionaryStrs: string[]) {
     core.info(`Process test report for: ${reportPathsGlob} (${checkName})`);
     const testResults: TestResult[] = [];
 
