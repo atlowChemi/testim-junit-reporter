@@ -13,7 +13,8 @@
         "format-check": "prettier --check **/*.ts",
         "lint": "eslint --ext .ts src/",
         "all": "yarn type-check && yarn build && yarn format && yarn lint yarn test",
-        "test": "node --test --import tsx src/test/*.test.ts "
+        "test": "node --experimental-test-snapshots --test --import tsx src/test/*.test.ts ",
+        "test:update-snapshot": "node --experimental-test-snapshots --test-update-snapshots --test --import tsx src/test/*.test.ts "
     },
     "repository": {
         "type": "git",
