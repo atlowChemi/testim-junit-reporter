@@ -70,8 +70,8 @@ async function parseFile(file: string, projectTokenDictionaryStrs: string[]) {
     const data: string = fs.readFileSync(file, 'utf8');
     const parser = new XMLParser({ allowBooleanAttributes: true, ignoreAttributes: false, attributeNamePrefix: '' });
     const report = parser.parse(data) as Partial<JUnitReport>;
-    const testsuites = castArray(report?.testsuite || report.testsuites?.testsuite);
-    return Promise.all(testsuites.map(async testsuite => parseSuite(file, projectTokenDictionaryStrs, testsuite)));
+    const testsuites = castArray(report?.testsuite || report?.testsuites?.testsuite);
+    return Promise.all(testsuites.map(async (testsuite: JUnitSuite | undefined) => parseSuite(file, projectTokenDictionaryStrs, testsuite)));
 }
 
 async function parseSuite(fileName: string, projectTokenDictionaryStrs: string[], testsuite?: JUnitSuite) {
@@ -128,7 +128,7 @@ export async function parseTestReports(checkName: string, summary: string, repor
             if (totalCount === 0) {
                 continue;
             }
-            const failed = annotations.filter(an => an.annotation_level !== 'notice').length;
+            const failed = annotations.filter((an: { annotation_level: string; }) => an.annotation_level !== 'notice').length;
             const passed = totalCount - failed - skipped;
             testResults.push({
                 summary,
@@ -147,7 +147,7 @@ export async function parseTestReports(checkName: string, summary: string, repor
     return testResults;
 }
 
-class NoTestsFoundError extends Error { }
+class NoTestsFoundError extends Error {}
 
 export async function getTestReports(inputs: Readonly<ReturnType<typeof parseInputs>>) {
     core.startGroup(`📦 Process test results`);
@@ -156,7 +156,7 @@ export async function getTestReports(inputs: Readonly<ReturnType<typeof parseInp
     core.info(`Retrieved ${reportsCount} report globs/files to process.`);
 
     const allResults = await Promise.all(
-        inputs.reportPaths.map(async (_, i) =>
+        inputs.reportPaths.map(async (_: any, i: any) =>
             parseTestReports(
                 retrieve('checkName', inputs.checkName, i, reportsCount),
                 retrieve('summary', inputs.summary, i, reportsCount),
