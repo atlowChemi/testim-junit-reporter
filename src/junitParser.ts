@@ -70,7 +70,7 @@ async function parseFile(file: string, projectTokenDictionaryStrs: string[]) {
     const data: string = fs.readFileSync(file, 'utf8');
     const parser = new XMLParser({ allowBooleanAttributes: true, ignoreAttributes: false, attributeNamePrefix: '' });
     const report = parser.parse(data) as Partial<JUnitReport>;
-    const testsuites = report.testsuite ? castArray(report.testsuite) : castArray(report.testsuites?.testsuite);
+    const testsuites = castArray(report?.testsuite || report.testsuites?.testsuite);
     return Promise.all(testsuites.map(async testsuite => parseSuite(file, projectTokenDictionaryStrs, testsuite)));
 }
 
@@ -147,7 +147,7 @@ export async function parseTestReports(checkName: string, summary: string, repor
     return testResults;
 }
 
-class NoTestsFoundError extends Error {}
+class NoTestsFoundError extends Error { }
 
 export async function getTestReports(inputs: Readonly<ReturnType<typeof parseInputs>>) {
     core.startGroup(`📦 Process test results`);
