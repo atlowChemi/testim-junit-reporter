@@ -11,6 +11,7 @@ module.exports = {
         'filenames/match-regex': 'off',
         'sort-imports': 'off',
         'eslint-comments/no-use': 'off',
+        'import/extensions': ['error', 'always'],
         'import/no-namespace': 'off',
         'no-unused-vars': 'off',
         'i18n-text/no-en': 'off',
@@ -50,5 +51,20 @@ module.exports = {
     env: {
         node: true,
         es6: true,
+    },
+    settings: {
+        'import/extensions': ['.js', '.ts'],
+        'import/parsers': {
+            '@typescript-eslint/parser': ['.ts'],
+        },
+        'import/resolver': {
+            node: {
+                extensions: ['.js', '.ts'],
+                extensionAlias: {
+                    '.js': ['.ts'],
+                    '.ts': ['.js'],
+                }
+            },
+        },
     },
 };
