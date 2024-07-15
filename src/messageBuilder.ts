@@ -1,8 +1,8 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import type { parseInputs } from './inputParser';
-import type { getTestReports, TestResult } from './junitParser';
-import type { SummaryTableCell, SummaryTableRow } from '@actions/core/lib/summary';
+import type { parseInputs } from './inputParser.ts';
+import type { getTestReports, TestResult } from './junitParser.ts';
+import type { SummaryTableCell, SummaryTableRow } from '@actions/core/lib/summary.js';
 
 async function annotateTestResult(testResult: TestResult, token: string, headSha: string, updateCheck: boolean, jobName: string): Promise<void> {
     const annotations = testResult.annotations.filter(annotation => annotation.annotation_level !== 'notice');
