@@ -3,8 +3,8 @@ import * as core from '@actions/core';
 import * as glob from '@actions/glob';
 import * as github from '@actions/github';
 import { XMLParser } from 'fast-xml-parser';
-import { escapeEmoji, retrieve, castArray, parseTestimFailureMessage, getTestStatusesFromPublicAPI } from './utils.js';
-import type { parseInputs } from './inputParser.js';
+import { escapeEmoji, retrieve, castArray, parseTestimFailureMessage, getTestStatusesFromPublicAPI } from './utils.ts';
+import type { parseInputs } from './inputParser.ts';
 
 interface InternalTestResult {
     name?: string;

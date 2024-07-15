@@ -1,7 +1,7 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import type { parseInputs } from './inputParser.js';
-import type { getTestReports, TestResult } from './junitParser.js';
+import type { parseInputs } from './inputParser.ts';
+import type { getTestReports, TestResult } from './junitParser.ts';
 import type { SummaryTableCell, SummaryTableRow } from '@actions/core/lib/summary.js';
 
 async function annotateTestResult(testResult: TestResult, token: string, headSha: string, updateCheck: boolean, jobName: string): Promise<void> {

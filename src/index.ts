@@ -1,8 +1,8 @@
-import 'source-map-support/register';
+import 'source-map-support/register.js';
 import * as core from '@actions/core';
-import { parseInputs } from './inputParser.js';
-import { getTestReports } from './junitParser.js';
-import { publishAnnotations, publishCommentOnPullRequest } from './messageBuilder.js';
+import { parseInputs } from './inputParser.ts';
+import { getTestReports } from './junitParser.ts';
+import { publishAnnotations, publishCommentOnPullRequest } from './messageBuilder.ts';
 
 export async function run(): Promise<void> {
     try {
