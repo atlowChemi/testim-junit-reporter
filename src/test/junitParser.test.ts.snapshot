@@ -3,10 +3,6 @@ exports[`should parse junit report with 1 suite 1`] = `
 `;
 
 exports[`should parse junit report with 1 suite 2`] = `
-"/Users/eladtal/testim-junit-reporter/testim-junit-reporter-1/src/test/xml/testsuite.xml"
-`;
-
-exports[`should parse junit report with 1 suite 3`] = `
 2
 `;
 
@@ -15,9 +11,5 @@ exports[`should parse junit report with 3 suites 1`] = `
 `;
 
 exports[`should parse junit report with 3 suites 2`] = `
-"/Users/eladtal/testim-junit-reporter/testim-junit-reporter-1/src/test/xml/testsuites.xml"
-`;
-
-exports[`should parse junit report with 3 suites 3`] = `
 2
 `;

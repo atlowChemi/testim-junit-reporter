@@ -1,17 +1,15 @@
 import { test } from 'node:test';
-import { parseTestReports } from '../junitParser';
+import { parseTestReports } from '../junitParser.ts';
 
-const DIRNAME = __dirname;
+const DIRNAME = import.meta.dirname;
 
 test('should parse junit report with 3 suites', async (t: any) => {
     const testReports = await parseTestReports('test', 'test', `${DIRNAME}/xml/testsuites.xml`, []);
-    t.assert.snapshot(testReports.length);
-    t.assert.snapshot(testReports[0].fileName);
-    t.assert.snapshot(testReports[0].annotations.length);
+    t.assert.strictEqual(testReports.length, 3);
+    t.assert.strictEqual(testReports[0].annotations.length, 2);
 });
 test('should parse junit report with 1 suite', async (t: any) => {
     const testReports = await parseTestReports('test', 'test', `${DIRNAME}/xml/testsuite.xml`, []);
-    t.assert.snapshot(testReports.length);
-    t.assert.snapshot(testReports[0].fileName);
-    t.assert.snapshot(testReports[0].annotations.length);
+    t.assert.strictEqual(testReports.length, 1);
+    t.assert.strictEqual(testReports[0].annotations.length, 2);
 });
