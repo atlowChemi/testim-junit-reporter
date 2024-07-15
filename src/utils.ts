@@ -1,6 +1,6 @@
 import * as core from '@actions/core';
 import * as http from '@actions/http-client';
-import type { JUnitTestCase } from './junitParser';
+import type { JUnitTestCase } from './junitParser.ts';
 
 export function retrieve(name: string, items: string[], index: number, total: number): string {
     if (total > 1) {

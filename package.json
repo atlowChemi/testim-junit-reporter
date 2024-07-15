@@ -6,6 +6,7 @@
     "main": "lib/index.js",
     "author": "atlowChemi <chemi@testim.io>",
     "license": "MIT",
+    "type": "module",
     "scripts": {
         "type-check": "tsc --noEmit",
         "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=lib/index.js --sourcemap",
@@ -40,11 +41,11 @@
     },
     "devDependencies": {
         "@types/node": "20",
-        "@typescript-eslint/parser": "^5.52.0",
+        "@typescript-eslint/parser": "^7.16.0",
         "esbuild": "^0.23.0",
         "eslint": "^8.34.0",
         "eslint-plugin-github": "^4.6.1",
         "prettier": "^2.8.4",
-        "typescript": "^4.9.5"
+        "typescript": "5.3"
     }
 }
