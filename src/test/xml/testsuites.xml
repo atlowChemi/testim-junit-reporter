@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<testsuites>
+  <testsuite name="first suite" tests="2" failures="1" timestamp="2024-06-27T08:43:18.231Z" skipped="1" failure-evaluating="1">
+    <testcase name="first suite first test" classname="test" time="0">
+      <system-out>https://app.testim.io/#/project/coco/branch/master/test/1234567A?result-id=1234567A</system-out>
+      <skipped/>
+    </testcase>
+   <testcase name="first suite second test" classname="test" time="0">
+      <system-out>https://app.testim.io/#/project/coco/branch/master/test/1234567B?result-id=1234567B</system-out>
+      <failure message="Step Failed: Element is not visible More info at: https://app.testim.io/#/project/coco/branch/master/test/1234567B?result-id=1234567B"/>
+    </testcase>
+  </testsuite>
+  <testsuite name="second suite" tests="2" failures="0" timestamp="2024-06-27T08:43:18.232Z" skipped="0" failure-evaluating="0">
+    <testcase name="second suite first test" classname="testim.io.test">
+      <system-out>https://app.testim.io/#/project/coco/branch/master/test/1234567C?result-id=1234567C</system-out>
+    </testcase>
+    <testcase name="second suite second test" classname="testim.io.test">
+      <system-out>https://app.testim.io/#/project/coco/branch/master/test/1234567D?result-id=1234567D</system-out>
+    </testcase>
+  </testsuite>
+  <testsuite name="third suite" tests="2" failures="0" timestamp="2024-06-27T08:43:18.232Z" skipped="0" failure-evaluating="0">
+    <testcase name="third suite first test" classname="testim.io.test">
+      <system-out>https://app.testim.io/#/project/coco/branch/master/test/1234567E?result-id=1234567E</system-out>
+    </testcase>
+    <testcase name="third suite second test" classname="testim.io.test">
+      <system-out>https://app.testim.io/#/project/coco/branch/master/test/1234567F?result-id=1234567F</system-out>
+    </testcase>
+  </testsuite>
+</testsuites>

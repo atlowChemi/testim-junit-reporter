@@ -61,7 +61,7 @@ interface JUnitSuite {
 }
 interface JUnitReport {
     testsuite?: JUnitSuite;
-    testsuites?: { testsuite?: JUnitSuite };
+    testsuites?: { testsuite?: JUnitSuite | JUnitSuite[] };
 }
 
 async function parseFile(file: string, projectTokenDictionaryStrs: string[]) {
@@ -70,12 +70,11 @@ async function parseFile(file: string, projectTokenDictionaryStrs: string[]) {
     const data: string = fs.readFileSync(file, 'utf8');
     const parser = new XMLParser({ allowBooleanAttributes: true, ignoreAttributes: false, attributeNamePrefix: '' });
     const report = parser.parse(data) as Partial<JUnitReport>;
-
-    return parseSuite(report, file, projectTokenDictionaryStrs);
+    const testsuites = castArray(report.testsuite || report.testsuites?.testsuite);
+    return Promise.all(testsuites.map(async (testsuite) => parseSuite(file, projectTokenDictionaryStrs, testsuite)));
 }
 
-async function parseSuite(report: JUnitReport, fileName: string, projectTokenDictionaryStrs: string[]) {
-    const testsuite = report.testsuite || report.testsuites?.testsuite;
+async function parseSuite(fileName: string, projectTokenDictionaryStrs: string[], testsuite?: JUnitSuite) {
     const result: InternalTestResult = { fileName, name: testsuite?.name, totalCount: 0, skipped: 0, failedEvaluating: parseInt(testsuite?.['failure-evaluating'] || '0') || 0, annotations: [] };
     if (!testsuite?.testcase) {
         return result;
@@ -116,31 +115,33 @@ async function parseSuite(report: JUnitReport, fileName: string, projectTokenDic
     return result;
 }
 
-async function parseTestReports(checkName: string, summary: string, reportPathsGlob: string, projectTokenDictionaryStrs: string[]) {
+export async function parseTestReports(checkName: string, summary: string, reportPathsGlob: string, projectTokenDictionaryStrs: string[]) {
     core.info(`Process test report for: ${reportPathsGlob} (${checkName})`);
     const testResults: TestResult[] = [];
 
     const globber = await glob.create(reportPathsGlob);
     for await (const file of globber.globGenerator()) {
         core.info(`Parsing report file: ${file}`);
-
-        const { totalCount, skipped, annotations, failedEvaluating, name, fileName } = await parseFile(file, projectTokenDictionaryStrs);
-        if (totalCount === 0) {
-            continue;
+        const suites = await parseFile(file, projectTokenDictionaryStrs);
+        for (const suite of suites) {
+            const { totalCount, skipped, annotations, failedEvaluating, name, fileName } = suite;
+            if (totalCount === 0) {
+                continue;
+            }
+            const failed = annotations.filter(an => an.annotation_level !== 'notice').length;
+            const passed = totalCount - failed - skipped;
+            testResults.push({
+                summary,
+                checkName: name || checkName,
+                fileName,
+                totalCount,
+                skipped,
+                failedEvaluating,
+                annotations,
+                failed,
+                passed,
+            });
         }
-        const failed = annotations.filter(an => an.annotation_level !== 'notice').length;
-        const passed = totalCount - failed - skipped;
-        testResults.push({
-            summary,
-            checkName: name || checkName,
-            fileName,
-            totalCount,
-            skipped,
-            failedEvaluating,
-            annotations,
-            failed,
-            passed,
-        });
     }
 
     return testResults;

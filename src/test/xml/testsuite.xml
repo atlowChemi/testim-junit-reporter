@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<testsuite name="first suite" tests="2" failures="1" timestamp="2024-06-27T08:43:18.231Z" skipped="1" failure-evaluating="1">
+    <testcase name="first suite first test" classname="test" time="0">
+      <system-out>https://app.testim.io/#/project/coco/branch/master/test/1234567A?result-id=1234567A</system-out>
+      <skipped/>
+    </testcase>
+   <testcase name="first suite second test" classname="test" time="0">
+      <system-out>https://app.testim.io/#/project/coco/branch/master/test/1234567B?result-id=1234567B</system-out>
+      <failure message="Step Failed: Element is not visible More info at: https://app.testim.io/#/project/coco/branch/master/test/1234567B?result-id=1234567B"/>
+    </testcase>
+  </testsuite>
