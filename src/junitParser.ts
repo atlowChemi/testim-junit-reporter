@@ -70,8 +70,8 @@ async function parseFile(file: string, projectTokenDictionaryStrs: string[]) {
     const data: string = fs.readFileSync(file, 'utf8');
     const parser = new XMLParser({ allowBooleanAttributes: true, ignoreAttributes: false, attributeNamePrefix: '' });
     const report = parser.parse(data) as Partial<JUnitReport>;
-    const testsuites = castArray(report?.testsuite || report.testsuites?.testsuite);
-    return Promise.all(testsuites.map(async (testsuite: JUnitSuite | undefined) => parseSuite(file, projectTokenDictionaryStrs, testsuite)));
+    const testsuites = castArray(report.testsuite || report.testsuites?.testsuite);
+    return Promise.all(testsuites.map(async (testsuite) => parseSuite(file, projectTokenDictionaryStrs, testsuite)));
 }
 
 async function parseSuite(fileName: string, projectTokenDictionaryStrs: string[], testsuite?: JUnitSuite) {
